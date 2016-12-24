@@ -17,7 +17,7 @@ defmodule Exd.Redis.PubSub do
 
   def handle_info({:redix_pubsub, _, :message, %{channel: "exd_queue", payload: payload}}, state) do
     file = payload |> Poison.decode!(as: %Exd.Download.File{})
-    Exd.Download.Tool.fetch(file.url)
+    Exd.Download.Tool.fetch(file)
     {:noreply, state}
   end
 

@@ -1,5 +1,5 @@
 defmodule Exd.Download.File do
-  defstruct size: 0, downloaded: 0, type: nil, url: nil, file_name: nil, state: :pending
+  defstruct size: 0, downloaded: 0, type: nil, url: nil, file_name: nil, state: :pending, rid: nil
 
   states = [:pending, :initialize, :accepted, :started, :downloading, :finished]
 

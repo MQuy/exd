@@ -1,18 +1,14 @@
 defmodule Exd.Redis.Client do
   @connection_name Exd.Redis.Connection
-  @lish_name "exd"
+  @list_name "exd"
   @channel_name "exd_queue"
 
-  def set(key, value) do
-    GenServer.cast(@connection_name, {:set, key, value})
+  def zadd(score, value, publish? \\ false) do
+    zadd(@list_name, score, value, publish?)
   end
-
-  def push(value) do
-    push(@lish_name, value)
-  end
-  def push(key, value) do
-    GenServer.cast(@connection_name, {:lpush, key, value})
-    publish(value)
+  def zadd(key, score, value, publish?) do
+    GenServer.cast(@connection_name, {:zadd, key, score, value})
+    if publish?, do: publish(value)
   end
 
   def publish(info) do
@@ -22,10 +18,24 @@ defmodule Exd.Redis.Client do
     GenServer.cast(@connection_name, {:publish, channel_name, info})
   end
 
-  def lrange(start, stop) do
-    lrange(@lish_name, start, stop)
+  def zrange(start, stop) do
+    zrange(@list_name, start, stop)
   end
-  def lrange(key, start, stop) do
-    GenServer.call(@connection_name, {:lrange, key, start, stop})
+  def zrange(key, start, stop) do
+    GenServer.call(@connection_name, {:zrange, key, start, stop})
+  end
+
+  def zrangebyscore(start, stop) do
+    zrangebyscore(@list_name, start, stop)
+  end
+  def zrangebyscore(key, start, stop) do
+    GenServer.call(@connection_name, {:zrangebyscore, key, start, stop})
+  end
+
+  def zremrangebyscore(start, stop) do
+    zremrangebyscore(@list_name, start, stop)
+  end
+  def zremrangebyscore(key, start, stop) do
+    GenServer.cast(@connection_name, {:zremrangebyscore, key, start, stop})
   end
 end

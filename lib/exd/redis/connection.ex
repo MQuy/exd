@@ -28,6 +28,16 @@ defmodule Exd.Redis.Connection do
     {:noreply, conn}
   end
 
+  def handle_cast({:zadd, key, score, value}, conn) do
+    command(conn, ["ZADD", key, score, value])
+    {:noreply, conn}
+  end
+
+  def handle_cast({:zremrangebyscore, key, start, stop}, conn) do
+    command(conn, ["ZREMRANGEBYSCORE", key, start, stop])
+    {:noreply, conn}
+  end
+
   def handle_call({:get, key}, _from, conn) do
     {:ok, value} = command(conn, ["GET", key])
     {:reply, value, conn}
@@ -45,7 +55,17 @@ defmodule Exd.Redis.Connection do
 
   def handle_call({:llen, key}, _from, conn) do
     {:ok, length} = command(conn, ["LLEN", key])
-    {:noreply, length, conn}
+    {:reply, length, conn}
+  end
+
+  def handle_call({:zrange, key, start, stop}, _from, conn) do
+    {:ok, range} = command(conn, ["ZRANGE", key, start, stop])
+    {:reply, range, conn}
+  end
+
+  def handle_call({:zrangebyscore, key, start, stop}, _from, conn) do
+    {:ok, range} = command(conn, ["ZRANGEBYSCORE", key, start, stop])
+    {:reply, range, conn}
   end
 
   defp command(conn, args) do

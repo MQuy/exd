@@ -37,16 +37,17 @@ defmodule Exd.CLI do
 
   defp queue_links(links, %{async: true}) do
     Enum.each(links, fn(link) ->
-      %Exd.Download.File{url: link}
-      |> Poison.encode!
-      |> Exd.Redis.Client.push
+      file = %Exd.Download.File{url: link, rid: :os.system_time(:millisecond)}
+      encode = Poison.encode!(file)
+      Exd.Redis.Client.zadd(file.rid, encode, true)
     end)
+
     :timer.sleep 50
   end
   defp queue_links(links, _) do
     links
+    |> Enum.map(fn(link) -> %Exd.Download.File{url: link} end)
     |> Enum.each(&(Exd.Download.Tool.fetch(&1)))
-
     Exd.Download.Output.print
   end
 end

@@ -6,12 +6,12 @@ defmodule Exd.Download.Tool do
     GenServer.start_link(__MODULE__, file)
   end
 
-  def fetch(url) do
-    Exd.Download.Supervisor.add_child |> fetch(url)
+  def fetch(file) do
+    Exd.Download.Supervisor.add_child |> fetch(file)
   end
-  def fetch({:ok, pid}, url), do: fetch(pid, url)
-  def fetch(pid, url) do
-    GenServer.cast(pid, {:fetch, url})
+  def fetch({:ok, pid}, file), do: fetch(pid, file)
+  def fetch(pid, file) do
+    GenServer.cast(pid, {:fetch, file})
   end
 
   def get(pid) do
@@ -26,11 +26,10 @@ defmodule Exd.Download.Tool do
     {:reply, file, file}
   end
 
-  def handle_cast({:fetch, url}, file) do
+  def handle_cast({:fetch, %{url: url} = file}, _) do
     file_name = url |> String.split("/") |> List.last
     new_file =
       file
-      |> Map.put(:url, url)
       |> Map.put(:file_name, file_name)
       |> Map.put(:state, :initialize)
     HTTPoison.get url, %{}, stream_to: self
@@ -59,14 +58,16 @@ defmodule Exd.Download.Tool do
     new_file =
       file
       |> Map.put(:downloaded, file.downloaded + byte_size(chunk))
-      # |> Map.put(:data, file.data <> chunk)
       |> Map.put(:state, :downloading)
     {:noreply, new_file}
   end
 
   def handle_info(%HTTPoison.AsyncEnd{}, file) do
-    # File.write(file.file_name, file.data)
     new_file = Map.put(file, :state, :finished)
+    if new_file.rid do
+      Exd.Redis.Client.zremrangebyscore(new_file.rid, new_file.rid)
+      Exd.Redis.Client.zadd(new_file.rid, Poison.encode!(new_file))
+    end
     {:noreply, new_file}
   end
 
