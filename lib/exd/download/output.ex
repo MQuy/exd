@@ -19,7 +19,7 @@ defmodule Exd.Download.Output do
     end
   end
 
-  defp prepare_screen([]), do: :empty
+  defp prepare_screen([]), do: :nothing
   defp prepare_screen(previous_pids) do
     :timer.sleep 50
     previous_pids |> Enum.count |> move_cursor
@@ -27,16 +27,12 @@ defmodule Exd.Download.Output do
 
   defp tap_file(pid) do
     file = Exd.Download.Tool.get(pid)
-    if file.size > 0 do
-      Exd.ProgressBar.render(file.downloaded, file.size, true)
-    else
-      Exd.ProgressBar.render(0, 100, true)
-    end
+    Exd.LineFormat.render(file, pid)
     file
   end
 
   defp move_cursor(step) when step > 0, do: IO.write("\e[#{step}A")
-  defp move_cursor(_), do: :empty
+  defp move_cursor(_), do: :nothing
 
   defp clear_screen, do: IO.write("\e[0J")
 

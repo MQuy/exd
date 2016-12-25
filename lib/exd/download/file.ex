@@ -13,4 +13,10 @@ defmodule Exd.Download.File do
       state == unquote(state) |> Atom.to_string
     end
   end
+
+  def update_in_redis(%{rid: rid} = file) do
+    Exd.Redis.Client.zremrangebyscore(rid, rid)
+    Exd.Redis.Client.zadd(rid, Poison.encode!(file))
+  end
+  def update_in_redis(_), do: :nothing
 end

@@ -18,6 +18,7 @@ defmodule Exd.Download.Tool do
     GenServer.call(pid, :get)
   end
 
+  # Server
   def init(file) do
     {:ok, file}
   end
@@ -64,10 +65,7 @@ defmodule Exd.Download.Tool do
 
   def handle_info(%HTTPoison.AsyncEnd{}, file) do
     new_file = Map.put(file, :state, :finished)
-    if new_file.rid do
-      Exd.Redis.Client.zremrangebyscore(new_file.rid, new_file.rid)
-      Exd.Redis.Client.zadd(new_file.rid, Poison.encode!(new_file))
-    end
+    Exd.Download.File.update_in_redis(new_file)
     {:noreply, new_file}
   end
 
